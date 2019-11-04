@@ -1,0 +1,57 @@
+charts:
+  - archive: file:stable/ibm-ace-dashboard-prod-1.1.2.tgz
+    repository-keys:
+      - image.controlUI
+      - image.contentServer
+      - image.configurator
+  - archive: file:stable/ibm-ace-server-prod-1.1.2.tgz
+    repository-keys:
+      - image.repository.aceonly
+      - image.repository.acemq
+      - image.repository.configurator
+images:
+- image: ibm-ace-content-server-prod:11.0.0.4a
+  references:
+  - repository: ibm-ace-content-server-prod:11.0.0.4a
+    pull-repository: hyc-icpcontent-docker-local.artifactory.swg-devops.com/ace/ibm-ace-content-server-prod:11.0.0.4a
+    pull-authorization:
+      username:
+        env: ARTIFACTORY_USER
+      password:
+        env: ARTIFACTORY_PASS
+- image: ibm-ace-dashboard-prod:11.0.0.4a
+  references:
+  - repository: ibm-ace-dashboard-prod:11.0.0.4a
+    pull-repository: hyc-icpcontent-docker-local.artifactory.swg-devops.com/ace/ibm-ace-dashboard-prod:11.0.0.4a
+    pull-authorization:
+      username:
+        env: ARTIFACTORY_USER
+      password:
+        env: ARTIFACTORY_PASS
+- image: ibm-ace-server-prod:11.0.0.4a
+  references:
+  - repository: ibm-ace-server-prod:11.0.0.4a
+    pull-repository: hyc-icpcontent-docker-local.artifactory.swg-devops.com/ace/ibm-ace-server-prod:11.0.0.4a
+    pull-authorization:
+      username:
+        env: ARTIFACTORY_USER
+      password:
+        env: ARTIFACTORY_PASS
+- image: ibm-ace-mq-server-prod:11.0.0.4a
+  references:
+  - repository: ibm-ace-mq-server-prod:11.0.0.4a
+    pull-repository: hyc-icpcontent-docker-local.artifactory.swg-devops.com/ace/ibm-ace-mq-server-prod:11.0.0.4a
+    pull-authorization:
+      username:
+        env: ARTIFACTORY_USER
+      password:
+        env: ARTIFACTORY_PASS
+- image: ibm-ace-icp-configurator-prod:11.0.0.4a
+  references:
+  - repository: ibm-ace-icp-configurator-prod:11.0.0.4a
+    pull-repository: hyc-icpcontent-docker-local.artifactory.swg-devops.com/ace/ibm-ace-icp-configurator-prod:11.0.0.4a
+    pull-authorization:
+      username:
+        env: ARTIFACTORY_USER
+      password:
+        env: ARTIFACTORY_PASS

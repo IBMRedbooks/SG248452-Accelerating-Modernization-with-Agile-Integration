@@ -1,0 +1,4 @@
+image:
+  contentServer: hyc-icpcontent-docker-local.artifactory.swg-devops.com/ace/ibm-ace-content-server-prod
+  tag: 11.0.0.4a
+  pullPolicy: Always

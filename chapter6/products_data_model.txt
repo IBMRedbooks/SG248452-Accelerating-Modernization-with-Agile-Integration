@@ -1,0 +1,7 @@
+Table Name: Products
+
+last_updated    datetime    (YY-MM-DDTHH:MM:SS.sssZ)
+part_number     int64       PRIMARY
+product_name    string
+quantity        int64
+description     string      OPTIONAL

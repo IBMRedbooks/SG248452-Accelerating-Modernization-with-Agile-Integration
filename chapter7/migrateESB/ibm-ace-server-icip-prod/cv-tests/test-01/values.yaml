@@ -1,0 +1,24 @@
+image:
+  repository:
+    aceonly: mycluster.icp:8500/icp4i/ace/ibm-ace-server-prod
+    configurator: mycluster.icp:8500/icp4i/ace/ibm-ace-icp-configurator-prod
+  pullPolicy: Always
+  pullSecret: hyc-icpcontent-docker-local.artifactory.swg-devops.com
+license: accept
+queueManagerEnabled: false
+aceonly:
+  resources:
+    requests:
+      cpu: 1
+      memory: 1024Mi
+    limits:
+      cpu: 1
+      memory: 1024Mi
+configurationSecret: test01-secret
+integrationServer:
+  keystoreKeyNames: mykey, mykey0,mykey1
+  truststoreCertNames: mykey,mykey0, mykey1
+service:
+  type: NodePort
+log:
+  format: basic

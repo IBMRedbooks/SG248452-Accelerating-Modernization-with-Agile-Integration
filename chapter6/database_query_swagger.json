@@ -1,0 +1,52 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "title" : "database_query",
+    "version" : "1.0.0",
+    "description" : "database_query"
+  },
+  "paths" : {
+    "/products" : {
+      "get" : {
+        "operationId" : "getProducts",
+        "responses" : {
+          "200" : {
+            "description" : "The operation was successful.",
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        },
+        "produces" : [ "application/json" ],
+        "description" : "Retrieve products",
+        "parameters" : [ ]
+      }
+    }
+  },
+  "basePath" : "/database_query/v1",
+  "definitions" : {
+    "product_table" : {
+      "type" : "array",
+      "items" : {
+        "type" : "object",
+        "properties" : {
+          "product_name" : {
+            "type" : "string"
+          },
+          "part_number" : {
+            "type" : "integer"
+          },
+          "quantity" : {
+            "type" : "integer"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "last_updated" : {
+            "type" : "string"
+          }
+        }
+      }
+    }
+  }
+}

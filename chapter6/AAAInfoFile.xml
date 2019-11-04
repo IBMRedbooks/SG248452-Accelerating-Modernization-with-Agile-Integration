@@ -1,0 +1,81 @@
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<aaa:AAAInfo xmlns:aaa="http://www.datapower.com/AAAInfo" xmlns:dpfunc="http://www.datapower.com/extensions/functions">
+   <aaa:FormatVersion>1</aaa:FormatVersion>
+   <aaa:Filename>store:///AAAInfo.xml</aaa:Filename>
+   <aaa:Summary>This is an example of the file format.</aaa:Summary>
+   <!-- Determine credential from output of the extract-identity phase. -->
+   <aaa:Authenticate>
+      <aaa:Username>BookUser</aaa:Username>
+      <aaa:Password>BookUser</aaa:Password>
+      <aaa:OutputCredential>admin</aaa:OutputCredential>
+   </aaa:Authenticate>
+   <aaa:Authenticate>
+      <aaa:Username>Mohammed</aaa:Username>
+      <aaa:Password>Alreedi</aaa:Password>
+      <aaa:OutputCredential>admin</aaa:OutputCredential>
+   </aaa:Authenticate>
+   <aaa:Authenticate>
+      <aaa:Username>tonyf</aaa:Username>
+      <aaa:Password>tonyf</aaa:Password>
+      <aaa:OutputCredential>tonyf</aaa:OutputCredential>
+   </aaa:Authenticate>
+   <aaa:Authenticate>
+      <aaa:DN>CN=Alice, O=DataPower, L=Cambridge, ST=MA, C=US</aaa:DN>
+      <aaa:OutputCredential>admin</aaa:OutputCredential>
+   </aaa:Authenticate>
+   <aaa:Authenticate>
+      <aaa:IPHost>127.0.0.1</aaa:IPHost>
+      <aaa:OutputCredential>admin</aaa:OutputCredential>
+   </aaa:Authenticate>
+   <aaa:Authenticate>
+      <aaa:IPHost>::1</aaa:IPHost>
+      <aaa:OutputCredential>admin</aaa:OutputCredential>
+   </aaa:Authenticate>
+   <aaa:Authenticate>
+      <aaa:Username>Eve</aaa:Username>
+      <aaa:Password>password</aaa:Password>
+      <aaa:OutputCredential>guest</aaa:OutputCredential>
+   </aaa:Authenticate>
+   <!-- Specify credential (if any) to use when there is no authenticated identity. -->
+   <!-- Map credentials to different credentials. -->
+   <!-- Determine resource from output of the extract-resource phase. -->
+   <!-- Authorize access to resource for credentials. -->
+   <aaa:Authorize>
+      <aaa:InputCredential>guest</aaa:InputCredential>
+      <aaa:InputResource>bar/.*html$</aaa:InputResource>
+      <aaa:Access>allow</aaa:Access>
+   </aaa:Authorize>
+   <aaa:Authorize>
+      <aaa:InputCredential>guest</aaa:InputCredential>
+      <aaa:InputResource>.*.cgi</aaa:InputResource>
+      <aaa:Access>deny</aaa:Access>
+   </aaa:Authorize>
+   <aaa:Authorize>
+      <aaa:InputCredential>admin</aaa:InputCredential>
+      <aaa:InputResource>foo/.*</aaa:InputResource>
+      <aaa:Access>allow</aaa:Access>
+   </aaa:Authorize>
+   <aaa:Authorize>
+      <aaa:InputCredential>admin</aaa:InputCredential>
+      <aaa:InputResource>.* echo</aaa:InputResource>
+      <aaa:Access>allow</aaa:Access>
+   </aaa:Authorize>
+   <aaa:Authorize>
+      <aaa:InputCredential>admin</aaa:InputCredential>
+      <aaa:InputResource>/cgi-bin/x top</aaa:InputResource>
+      <aaa:Access>allow</aaa:Access>
+   </aaa:Authorize>
+   <aaa:Authorize>
+      <aaa:InputCredential>admin</aaa:InputCredential>
+      <aaa:InputResource>.*</aaa:InputResource>
+      <aaa:Access>deny</aaa:Access>
+   </aaa:Authorize>
+   <aaa:Authorize>
+      <aaa:InputCredential>30sha1WithRSAEncryptionC=US, ST=MA, L=Cambridge, O=DataPower, CN=Alice2002-11-23T01:15:33Z2012-11-23T01:15:33ZC=US, ST=MA, L=Cambridge, O=DataPower, CN=AlicersaEncryption</aaa:InputCredential>
+      <aaa:InputResource>/* top</aaa:InputResource>
+      <aaa:Access>allow</aaa:Access>
+   </aaa:Authorize>
+</aaa:AAAInfo>
+

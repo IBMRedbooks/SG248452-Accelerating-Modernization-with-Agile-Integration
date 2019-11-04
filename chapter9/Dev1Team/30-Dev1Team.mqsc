@@ -1,0 +1,5 @@
+* Define queue for application
+DEFINE QLOCAL('MyApp.IN') REPLACE
+
+* Authority records
+SET AUTHREC PROFILE('MyApp.IN') GROUP('mqclient') OBJTYPE(QUEUE) AUTHADD(BROWSE,GET,INQ,PUT)

@@ -1,0 +1,281 @@
+$integration: 'http://ibm.com/appconnect/integration/v2/integrationFile'
+integration:
+  type: api
+  trigger-interfaces:
+    trigger-interface-1:
+      triggers:
+        retrieveRecalledAssetList:
+          assembly:
+            $ref: '#/integration/assemblies/assembly-2'
+          input-context:
+            data: RecalledAssetList
+          output-context:
+            data: RecalledAssetList
+      options:
+        resources:
+          - business-object: RecalledAssetList
+            model:
+              $ref: '#/models/RecalledAssetList'
+            triggers:
+              retrieve: retrieveRecalledAssetList
+      type: api-trigger
+  action-interfaces:
+    action-interface-1:
+      type: api-action
+      business-object: Asset
+      connector-type: salesforce
+      account-name: Account 2
+      actions:
+        RETRIEVEALL: {}
+    action-interface-2:
+      type: api-action
+      business-object: Account
+      connector-type: salesforce
+      account-name: Account 4
+      actions:
+        RETRIEVEALL: {}
+    action-interface-3:
+      type: api-action
+      business-object: worksheetRow
+      connector-type: googlesheet
+      account-name: Account 3
+      actions:
+        CREATE: {}
+  assemblies:
+    assembly-2:
+      assembly:
+        execute:
+          - retrieve-action:
+              name: Salesforce Retrieve asset
+              target:
+                $ref: '#/integration/action-interfaces/action-interface-1'
+              filter:
+                where:
+                  and:
+                    - Name: '{{$api.Id}}'
+                    - Status: Installed
+                input:
+                  - variable: api
+                    $ref: '#/trigger/api/parameters'
+                limit: 10
+              allow-truncation: true
+              pagination-type: TOKEN
+              allow-empty-output: true
+          - for-each:
+              name: For each
+              assembly:
+                $ref: '#/integration/assemblies/assembly-1'
+              source:
+                expression: '$SalesforceRetrieveasset '
+                input:
+                  - variable: api
+                    $ref: '#/trigger/api/parameters'
+                  - variable: SalesforceRetrieveasset
+                    $ref: '#/node-output/Salesforce Retrieve asset/response/payload'
+                  - variable: SalesforceRetrieveassetMetadata
+                    $ref: '#/node-output/Salesforce Retrieve asset/response'
+              mode: sequential
+              continue-on-error: true
+              map:
+                $map: 'http://ibm.com/appconnect/map/v1'
+                input:
+                  - variable: Foreachitem
+                    $ref: '#/block/For each/current-item'
+                  - variable: api
+                    $ref: '#/trigger/api/parameters'
+                  - variable: SalesforceRetrieveaccounts
+                    $ref: >-
+                      #/block/For each/node-output/Salesforce Retrieve
+                      accounts/response/payload
+                  - variable: SalesforceRetrieveaccountsMetadata
+                    $ref: >-
+                      #/block/For each/node-output/Salesforce Retrieve
+                      accounts/response
+                  - variable: GoogleSheetsCreaterow
+                    $ref: >-
+                      #/block/For each/node-output/Google Sheets Create
+                      row/response/payload
+                  - variable: SalesforceRetrieveasset
+                    $ref: '#/node-output/Salesforce Retrieve asset/response/payload'
+                  - variable: SalesforceRetrieveassetMetadata
+                    $ref: '#/node-output/Salesforce Retrieve asset/response'
+                customSchemas:
+                  properties.`output`:
+                    type: object
+                    properties:
+                      AccountName:
+                        type: string
+                      AssetName:
+                        type: string
+                      InstalledDate:
+                        type: string
+                        format: date-time
+                      Status:
+                        type: string
+                      SerialNumber:
+                        type: string
+                mappings:
+                  - output:
+                      mappings:
+                        - AccountName:
+                            template: '{{$SalesforceRetrieveaccounts.Name}}'
+                        - AssetName:
+                            template: '{{$api.Id}}'
+                        - InstalledDate:
+                            template: '{{$Foreachitem.InstallDate}}'
+                        - SerialNumber:
+                            template: '{{$Foreachitem.SerialNumber}}'
+                        - Status:
+                            template: '{{$Foreachitem.Status}}'
+              display-name: Salesforce Asset
+          - response:
+              name: response-1
+              reply-maps:
+                - title: RecalledAssetList successfully retrieved
+                  status-code: '200'
+                  map:
+                    $map: 'http://ibm.com/appconnect/map/v1'
+                    input:
+                      - variable: api
+                        $ref: '#/trigger/api/parameters'
+                      - variable: SalesforceRetrieveasset
+                        $ref: >-
+                          #/node-output/Salesforce Retrieve
+                          asset/response/payload
+                      - variable: SalesforceRetrieveassetMetadata
+                        $ref: '#/node-output/Salesforce Retrieve asset/response'
+                      - variable: Foreach
+                        $ref: '#/node-output/For each/response/payload'
+                    mappings:
+                      - AccountList:
+                          foreach:
+                            input: '$Foreach '
+                            iterator: AccountListItem
+                            mappings:
+                              - AccountName:
+                                  template: '{{$AccountListItem.output.AccountName}}'
+                              - AssetName:
+                                  template: '{{$AccountListItem.output.AssetName}}'
+                              - InstalledDate:
+                                  template: '{{$AccountListItem.output.InstalledDate}}'
+                              - SerialNo:
+                                  template: '{{$AccountListItem.output.SerialNumber}}'
+                              - Status:
+                                  template: '{{$AccountListItem.output.Status}}'
+                      - Id:
+                          template: '{{$api.Id}}'
+                      - Status:
+                          template: 'Report is generated for {{$api.Id}}'
+                  input:
+                    - variable: api
+                      $ref: '#/trigger/api/parameters'
+                    - variable: SalesforceRetrieveasset
+                      $ref: '#/node-output/Salesforce Retrieve asset/response/payload'
+                    - variable: SalesforceRetrieveassetMetadata
+                      $ref: '#/node-output/Salesforce Retrieve asset/response'
+                    - variable: Foreach
+                      $ref: '#/node-output/For each/response/payload'
+    assembly-1:
+      assembly:
+        execute:
+          - retrieve-action:
+              name: Salesforce Retrieve accounts
+              target:
+                $ref: '#/integration/action-interfaces/action-interface-2'
+              filter:
+                where:
+                  Id: '{{$Foreachitem.AccountId}}'
+                input:
+                  - variable: Foreachitem
+                    $ref: '#/block/For each/current-item'
+                  - variable: api
+                    $ref: '#/trigger/api/parameters'
+                  - variable: SalesforceRetrieveasset
+                    $ref: '#/node-output/Salesforce Retrieve asset/response/payload'
+                  - variable: SalesforceRetrieveassetMetadata
+                    $ref: '#/node-output/Salesforce Retrieve asset/response'
+                limit: 10
+              allow-truncation: false
+              pagination-type: TOKEN
+              allow-empty-output: false
+          - create-action:
+              name: Google Sheets Create row
+              target:
+                $ref: '#/integration/action-interfaces/action-interface-3'
+              map:
+                mappings:
+                  - fields:
+                      mappings:
+                        - '1':
+                            template: '{{$SalesforceRetrieveaccounts.Name}}'
+                        - '2':
+                            template: '{{$api.Id}}'
+                        - '3':
+                            template: '{{$Foreachitem.InstallDate}}'
+                        - '4':
+                            template: '{{$Foreachitem.Status}}'
+                        - '5':
+                            template: '{{$Foreachitem.SerialNumber}}'
+                  - spreadsheetID:
+                      template: 1HaD1YEf6SSWn5eaJD5w7clcXM-IPe7dNMjHi2FQamgU
+                  - worksheetID:
+                      template: Sheet1
+                $map: 'http://ibm.com/appconnect/map/v1'
+                input:
+                  - variable: Foreachitem
+                    $ref: '#/block/For each/current-item'
+                  - variable: api
+                    $ref: '#/trigger/api/parameters'
+                  - variable: SalesforceRetrieveaccounts
+                    $ref: >-
+                      #/block/For each/node-output/Salesforce Retrieve
+                      accounts/response/payload
+                  - variable: SalesforceRetrieveaccountsMetadata
+                    $ref: >-
+                      #/block/For each/node-output/Salesforce Retrieve
+                      accounts/response
+                  - variable: SalesforceRetrieveasset
+                    $ref: '#/node-output/Salesforce Retrieve asset/response/payload'
+                  - variable: SalesforceRetrieveassetMetadata
+                    $ref: '#/node-output/Salesforce Retrieve asset/response'
+  name: API Recall List
+models:
+  RecalledAssetList:
+    name: RecalledAssetList
+    properties:
+      Id:
+        required: false
+        id: true
+        type: string
+      Status:
+        required: false
+        id: false
+        type: string
+      AccountList:
+        required: false
+        id: false
+        type:
+          - AccountName:
+              required: false
+              id: false
+              type: string
+            AssetName:
+              required: false
+              id: false
+              type: string
+            InstalledDate:
+              required: false
+              id: false
+              type: date
+            Status:
+              required: false
+              id: false
+              type: string
+            SerialNo:
+              required: false
+              id: false
+              type: string
+    plural: RecalledAssetList
+    description: This list contains all the Assets that are under recalled program.
+    operations:
+      retrieve: '#/integration/assemblies/assembly-2'

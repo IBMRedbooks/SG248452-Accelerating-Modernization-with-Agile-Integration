@@ -1,0 +1,25 @@
+ignoreMessages:
+  # Using standard SCH help for all labels
+  - "\\[REVIEW\\] templates: found use of old standard labels, consider using new labels if breaking chart upgrade is acceptable \\(CheckForOldMetadataLabels\\)"
+  # Default value defined in values.yaml
+  - "\\[REVIEW\\] templates/deployment.yaml:.*, templates/post-delete-secret.yaml:.*, templates/pre-install-secret.yaml:.* \\+.* more: parameter is used but not defined: .Values.fsGroupGid \\(UsedParametersAreDefined\\)"
+  - "\\[REVIEW\\] templates/deployment.yaml:.*, templates/deployment.yaml:.*, templates/deployment.yaml:.* \\+.* more: parameter is used but not defined: .Values.contentServerURL \\(UsedParametersAreDefined\\)"
+  # All secrets being retrieved using this access are located in the same namespace
+  - "\\[REVIEW\\] templates/handle-secret-role.yaml: installing resource may require the ClusterAdministrator role: found ClusterRole resource \\(NoClusterAdminRequired\\)"
+  # According to the docs here: https://github.ibm.com/IBMPrivateCloud/content-repo-template/blob/master/stable/ibm-chart-dev/Chart.yaml this is optional
+  - "\\[ERROR\\] Chart.yaml: missing required chart key: missing appVersion \\(RequiredChartKeys\\)"
+  # These are not secrets, these are value names
+  - "\\[REVIEW\\] values.yaml: found potentially secret parameter that may not be allowed: found 'image.pullSecret' \\(NoSensitiveInfoInValues\\)"
+  - "\\[REVIEW\\] values.yaml: found potentially secret parameter that may not be allowed: found 'configurationSecret' \\(NoSensitiveInfoInValues\\)"
+  - "\\[REVIEW\\] values.yaml: found potentially secret parameter that may not be allowed: found 'integrationServer.keystoreKeyNames' \\(NoSensitiveInfoInValues\\)"
+  - "\\[REVIEW\\] values.yaml: found potentially secret parameter that may not be allowed: found 'integrationServer.truststoreCertNames' \\(NoSensitiveInfoInValues\\)"
+  # Helm hooks being used appropriately
+  - "\\[REVIEW\\] .* found helm hook \\(ReviewHelmHooks\\)"
+  # Not going for L2 certification in this release
+  - "\\[WARNING] ibm_cloud_pak/qualification.yaml: production charts should be L2 certified: chart is L1 certified \\(ProdChartIsCertified\\)"
+  # Tenary function works on helm version 2.9.1+icp
+  - "\\[ERROR\\] templates/.* template function not valid for every supported Tiller version: function 'ternary' is valid for Tiller '>=2.10.0', but Chart.yaml tillerVersion is '>=2.9.1' \\(TemplateFunctionValidForTiller\\)"
+  # MQ container currently must run as root. This has been preapproved.
+  - "\\[ERROR\\] templates/stateful-set.yaml: container running as root is not allowed: found UID 0 at spec.template.spec..*.runAsUser \\(NoRunAsRootUser\\)"
+  # Image is used by pre- and post-secret creation scripts
+  - "\\[REVIEW\\] ibm_cloud_pak/manifest.yaml: image is not used: 'ibm-ace-icp-configurator-prod:11.0.0.4a' \\(ManifestImagesAreUsed\\)"

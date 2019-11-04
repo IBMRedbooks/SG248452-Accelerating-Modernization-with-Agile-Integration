@@ -1,0 +1,94 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "title" : "DataBase_Operations",
+    "version" : "1.0.0",
+    "description" : "DataBase_Operations"
+  },
+  "paths" : {
+    "/products" : {
+      "post" : {
+        "operationId" : "postProducts",
+        "responses" : {
+          "200" : {
+            "description" : "The operation was successful."
+          }
+        },
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "description" : "Insert a products",
+        "parameters" : [ {
+          "name" : "body",
+          "in" : "body",
+          "schema" : {
+            "$ref" : "#/definitions/product_table"
+          },
+          "description" : "The request body for the operation",
+          "required" : true
+        } ]
+      },
+      "put" : {
+        "operationId" : "putProducts",
+        "responses" : {
+          "200" : {
+            "description" : "The operation was successful."
+          }
+        },
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "description" : "Update products",
+        "parameters" : [ {
+          "name" : "body",
+          "in" : "body",
+          "schema" : {
+            "$ref" : "#/definitions/product_table"
+          },
+          "description" : "The request body for the operation",
+          "required" : true
+        } ]
+      },
+      "delete" : {
+        "operationId" : "deleteProducts",
+        "responses" : {
+          "200" : {
+            "description" : "The operation was successful."
+          }
+        },
+        "produces" : [ "application/json" ],
+        "description" : "Remove from products",
+        "parameters" : [ {
+          "name" : "body",
+          "in" : "body",
+          "schema" : {
+            "$ref" : "#/definitions/product_table"
+          },
+          "description" : "The request body for the operation",
+          "required" : true
+        } ]
+      }
+    }
+  },
+  "basePath" : "/database_operations/v1",
+  "definitions" : {
+    "product_table" : {
+      "type" : "object",
+      "properties" : {
+        "part_number" : {
+          "type" : "integer",
+          "format" : "int64"
+        },
+        "quantity" : {
+          "type" : "integer",
+          "format" : "int64"
+        },
+        "product_name" : {
+          "type" : "string"
+        },
+        "description" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "part_number" ]
+    }
+  }
+}

@@ -1,0 +1,73 @@
+license: not accepted
+contentServerURL: null
+productionDeployment: true
+queueManagerEnabled: false
+image:
+  repository:
+    aceonly: mycluster.icp:8500/icp4i/ibm-ace-mqclient-server-prod-11005
+    acemq: mycluster.icp:8500/icp4i/ibm-ace-mq-server-prod-2pc-11005
+    configurator: mycluster.icp:8500/icp4i/ibm-ace-icp-configurator-prod
+  tag: 11.0.0.4a
+  pullPolicy: IfNotPresent
+  pullSecret: null
+arch: amd64
+fsGroupGid: null
+persistence:
+  enabled: true
+  useDynamicProvisioning: true
+dataPVC:
+  name: data
+  storageClassName: ""
+  size: 2Gi
+service:
+  type: NodePort
+  webuiPort: 7600
+  serverlistenerPort: 7800
+  serverlistenerTLSPort: 7843
+  switch1: 9010
+  switch2: 9011
+  switch3: 9012
+  gclistener: 2800
+  gcclient: 2801
+  gcjmx: 2802
+  gcha: 2803
+  iP: null
+aceonly:
+  resources:
+    requests:
+      cpu: "1"
+      memory: 1024Mi
+    limits:
+      cpu: "1"
+      memory: 1024Mi
+acemq:
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2048Mi
+    limits:
+      cpu: "1"
+      memory: 2048Mi
+replicaCount: 1
+configurationSecret: null
+queueManager:
+  name: null
+integrationServer:
+  name: null
+  keystoreKeyNames: null
+  truststoreCertNames: null
+  defaultAppName: null
+log:
+  format: json
+metrics:
+  enabled: true
+livenessProbe:
+  initialDelaySeconds: 360
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 1
+readinessProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 1

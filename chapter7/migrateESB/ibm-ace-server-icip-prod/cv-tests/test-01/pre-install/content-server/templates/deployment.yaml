@@ -1,0 +1,91 @@
+# © Copyright IBM Corporation 2019
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+{{ $deploymentName := include "sch.names.fullName" (list .) }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ $deploymentName }}
+  labels:
+{{ include "sch.metadata.labels.standard" (list . "") | indent 4 }}
+spec:
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  replicas: 1
+  template:
+    metadata:
+      name: {{ include "sch.names.fullName" (list .) }}
+      labels:
+{{ include "sch.metadata.labels.standard" (list . "") | indent 8 }}
+    spec:
+      {{- if .Values.image.pullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecret }}
+      {{- end }}
+      containers:
+        - name: {{ include "sch.names.fullName" (list .) }}-content-server
+          image: "{{ .Values.image.contentServer }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: rootStoreDirectory
+              value: /home/node/content
+            - name: certDirectory
+              value: /home/node/ssl
+            - name: ibmAceControlApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "sch.names.fullName" (list .) }}
+                  key: ibmAceControlApiKey
+          volumeMounts:
+            - name: tls
+              mountPath: /home/node/ssl
+              readOnly: true
+          # Set liveness probe to determine if the Integration Server is running
+          livenessProbe:
+            exec:
+              command:
+              - /readiness/ready.sh
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 1
+          # Set readiness probe to determine if the Integration Server admin endpoint is running
+          readinessProbe:
+            exec:
+              command:
+              - /readiness/ready.sh
+            initialDelaySeconds: 3
+            periodSeconds: 3
+            timeoutSeconds: 2
+            failureThreshold: 5
+          resources:
+            limits:
+              cpu: 0.5
+              memory: 512Mi
+            requests:
+              cpu: 0.1
+              memory: 256Mi
+      volumes:
+        - name: tls
+          secret:
+            secretName: {{ include "sch.names.fullName" (list .) }}
+            items:
+              - key: contentServerCACert
+                path: cacert.pem
+              - key: contentServerPrivateKey
+                path: pri.key
+              - key: contentServerCert
+                path: cert.pem

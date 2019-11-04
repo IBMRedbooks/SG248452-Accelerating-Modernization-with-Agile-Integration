@@ -1,0 +1,6 @@
+Table Name: Price
+
+last_updated    datetime    (YY-MM-DDTHH:MM:SS.sssZ)
+part_number     int64       Foreign
+price           int64
+currency        CHAR(3)

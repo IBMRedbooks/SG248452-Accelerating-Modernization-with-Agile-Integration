@@ -1,0 +1,251 @@
+$integration: 'http://ibm.com/appconnect/integration/v2/integrationFile'
+integration:
+  type: api
+  trigger-interfaces:
+    trigger-interface-1:
+      triggers:
+        createRecallProduct:
+          assembly:
+            $ref: '#/integration/assemblies/assembly-1'
+          input-context:
+            data: RecallProduct
+          output-context:
+            data: RecallProduct
+      options:
+        resources:
+          - business-object: RecallProduct
+            model:
+              $ref: '#/models/RecallProduct'
+            triggers:
+              create: createRecallProduct
+      type: api-trigger
+  action-interfaces:
+    action-interface-2:
+      type: api-action
+      business-object: RecalledAssetList_findById_model
+      connector-type: UDA.bkgh0xdim.openapi.API Recall-lDH5XD
+      account-name: Redbook2
+      actions:
+        RecalledAssetList_findById: {}
+    action-interface-1:
+      type: api-action
+      business-object: incident
+      connector-type: servicenow
+      account-name: Account 1
+      actions:
+        CREATE: {}
+  assemblies:
+    assembly-1:
+      assembly:
+        execute:
+          - custom-action:
+              name: API Recall-lDH5XD GET RecalledAssetList id
+              target:
+                $ref: '#/integration/action-interfaces/action-interface-2'
+              action: RecalledAssetList_findById
+              map:
+                mappings:
+                  - id:
+                      template: '{{$Request.RecallProductName}}'
+                $map: 'http://ibm.com/appconnect/map/v1'
+                input:
+                  - variable: Request
+                    $ref: '#/trigger/payload'
+          - if:
+              name: If 2
+              input:
+                - variable: Request
+                  $ref: '#/trigger/payload'
+                - variable: APIRecalllDH5XDGETRecalledAssetListid
+                  $ref: >-
+                    #/node-output/API Recall-lDH5XD GET RecalledAssetList
+                    id/response/payload
+                - variable: APIRecalllDH5XDGETRecalledAssetListidMetadata
+                  $ref: >-
+                    #/node-output/API Recall-lDH5XD GET RecalledAssetList
+                    id/response
+              branch:
+                - condition:
+                    '{{$APIRecalllDH5XDGETRecalledAssetListidMetadata."status-code"}}': '200'
+                  execute:
+                    - for-each:
+                        name: For each 2
+                        assembly:
+                          $ref: '#/integration/assemblies/assembly-2'
+                        source:
+                          expression: >-
+                            $APIRecalllDH5XDGETRecalledAssetListid.response."200".AccountList 
+                          input:
+                            - variable: Request
+                              $ref: '#/trigger/payload'
+                            - variable: APIRecalllDH5XDGETRecalledAssetListid
+                              $ref: >-
+                                #/node-output/API Recall-lDH5XD GET
+                                RecalledAssetList id/response/payload
+                            - variable: APIRecalllDH5XDGETRecalledAssetListidMetadata
+                              $ref: >-
+                                #/node-output/API Recall-lDH5XD GET
+                                RecalledAssetList id/response
+                        mode: sequential
+                        continue-on-error: true
+                        map:
+                          $map: 'http://ibm.com/appconnect/map/v1'
+                          input:
+                            - variable: Foreach2item
+                              $ref: '#/block/For each 2/current-item'
+                            - variable: Request
+                              $ref: '#/trigger/payload'
+                            - variable: ServiceNowCreateincident
+                              $ref: >-
+                                #/block/For each 2/node-output/ServiceNow Create
+                                incident/response/payload
+                            - variable: APIRecalllDH5XDGETRecalledAssetListid
+                              $ref: >-
+                                #/node-output/API Recall-lDH5XD GET
+                                RecalledAssetList id/response/payload
+                            - variable: APIRecalllDH5XDGETRecalledAssetListidMetadata
+                              $ref: >-
+                                #/node-output/API Recall-lDH5XD GET
+                                RecalledAssetList id/response
+                          customSchemas:
+                            properties.`output`:
+                              type: object
+                              properties:
+                                IncidentsCreated:
+                                  type: string
+                          mappings:
+                            - output:
+                                mappings:
+                                  - IncidentsCreated:
+                                      template: '{{$ServiceNowCreateincident.sys_id}}'
+                        display-name: API Recall-lDH5XD Object
+                  map:
+                    $map: 'http://ibm.com/appconnect/map/v1'
+                    input:
+                      - variable: Request
+                        $ref: '#/trigger/payload'
+                      - variable: Foreach2
+                        $ref: '#/block/If 2/node-output/For each 2/response/payload'
+                      - variable: APIRecalllDH5XDGETRecalledAssetListid
+                        $ref: >-
+                          #/node-output/API Recall-lDH5XD GET RecalledAssetList
+                          id/response/payload
+                      - variable: APIRecalllDH5XDGETRecalledAssetListidMetadata
+                        $ref: >-
+                          #/node-output/API Recall-lDH5XD GET RecalledAssetList
+                          id/response
+                    mappings:
+                      - IncidentsCreated:
+                          template: '{{$Foreach2.output.IncidentsCreated}} '
+              else:
+                execute: []
+                map:
+                  $map: 'http://ibm.com/appconnect/map/v1'
+                  input:
+                    - variable: Request
+                      $ref: '#/trigger/payload'
+                    - variable: APIRecalllDH5XDGETRecalledAssetListid
+                      $ref: >-
+                        #/node-output/API Recall-lDH5XD GET RecalledAssetList
+                        id/response/payload
+                    - variable: APIRecalllDH5XDGETRecalledAssetListidMetadata
+                      $ref: >-
+                        #/node-output/API Recall-lDH5XD GET RecalledAssetList
+                        id/response
+                  mappings: []
+              output-schema:
+                required: []
+                properties:
+                  IncidentsCreated:
+                    type: string
+                    title: IncidentsCreated
+                title: Output Schema
+                type: object
+          - response:
+              name: response-1
+              reply-maps:
+                - title: leads successfully created
+                  status-code: '201'
+                  map:
+                    $map: 'http://ibm.com/appconnect/map/v1'
+                    input:
+                      - variable: Request
+                        $ref: '#/trigger/payload'
+                      - variable: APIRecalllDH5XDGETRecalledAssetListid
+                        $ref: >-
+                          #/node-output/API Recall-lDH5XD GET RecalledAssetList
+                          id/response/payload
+                      - variable: APIRecalllDH5XDGETRecalledAssetListidMetadata
+                        $ref: >-
+                          #/node-output/API Recall-lDH5XD GET RecalledAssetList
+                          id/response
+                      - variable: If2
+                        $ref: '#/node-output/If 2/response/payload'
+                    mappings:
+                      - RecallProductName:
+                          template: '{{$If2.IncidentsCreated}} '
+                  input:
+                    - variable: Request
+                      $ref: '#/trigger/payload'
+                    - variable: APIRecalllDH5XDGETRecalledAssetListid
+                      $ref: >-
+                        #/node-output/API Recall-lDH5XD GET RecalledAssetList
+                        id/response/payload
+                    - variable: APIRecalllDH5XDGETRecalledAssetListidMetadata
+                      $ref: >-
+                        #/node-output/API Recall-lDH5XD GET RecalledAssetList
+                        id/response
+                    - variable: If2
+                      $ref: '#/node-output/If 2/response/payload'
+    assembly-2:
+      assembly:
+        execute:
+          - create-action:
+              name: ServiceNow Create incident
+              target:
+                $ref: '#/integration/action-interfaces/action-interface-1'
+              map:
+                mappings:
+                  - caller_id:
+                      template: Hybrid API
+                  - category:
+                      template: ' Hardware'
+                  - comments_and_work_notes:
+                      template: 'New Ticket for recalled: {{$Request.RecallProductName}}'
+                  - short_description:
+                      template: 'Recalled Proudct SerialNo:{{$Foreach2item.SerialNo}}'
+                  - state:
+                      expression: New
+                  - subcategory:
+                      template: '{{$Request.RecallProductName}}'
+                  - watch_list:
+                      template: 'Ticket created for: {{$Foreach2item.AccountName}}'
+                $map: 'http://ibm.com/appconnect/map/v1'
+                input:
+                  - variable: Foreach2item
+                    $ref: '#/block/For each 2/current-item'
+                  - variable: Request
+                    $ref: '#/trigger/payload'
+                  - variable: APIRecalllDH5XDGETRecalledAssetListid
+                    $ref: >-
+                      #/node-output/API Recall-lDH5XD GET RecalledAssetList
+                      id/response/payload
+                  - variable: APIRecalllDH5XDGETRecalledAssetListidMetadata
+                    $ref: >-
+                      #/node-output/API Recall-lDH5XD GET RecalledAssetList
+                      id/response
+  name: 'Hybrid API '
+models:
+  RecallProduct:
+    name: RecallProduct
+    properties:
+      RecallProductName:
+        required: false
+        id: true
+        type: string
+    plural: RecallProduct
+    description: >-
+      Generate a Google Sheet with a list of customers that have the recalled
+      product installed.
+    operations:
+      create: '#/integration/assemblies/assembly-1'

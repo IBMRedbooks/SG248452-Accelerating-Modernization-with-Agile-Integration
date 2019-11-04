@@ -1,0 +1,642 @@
+$integration: 'http://ibm.com/appconnect/integration/v2/integrationFile'
+integration:
+  type: trigger-action
+  trigger-interfaces:
+    trigger-interface-1:
+      connector-type: ibmmq
+      type: event-trigger
+      triggers:
+        NEWMSGQUEUE:
+          input-context:
+            data: message
+          assembly:
+            $ref: '#/integration/assemblies/assembly-1'
+          options:
+            subscription:
+              queueName: DEV.QUEUE.1
+      account-name: Account 1
+  action-interfaces:
+    action-interface-2:
+      type: notification-card
+      actions: {}
+      options:
+        card:
+          layout:
+            direction: vertical
+            style: layoutA
+            items:
+              - direction: horizontal
+                style: header
+                items:
+                  - style: icon
+                    widget_id: icon
+                  - direction: vertical
+                    items:
+                      - style: title
+                        widget_id: nameLabel
+                      - style: subtitle
+                        widget_id: timestamp
+              - direction: vertical
+                style: content
+                items:
+                  - widget_id: descriptionLabel
+              - style: buttons
+                widget_id: btnGrp1
+          widgets:
+            - id: icon
+              widget: icon
+            - id: timestamp
+              widget: timestamp
+            - id: btnGrp1
+              widget: buttonGroup
+              widget_ids: []
+            - id: nameLabel
+              widget: text
+              binding: description
+              value: 'Orders have been processed '
+            - id: descriptionLabel
+              widget: text
+              value: >
+                All orders for product {{$Trigger.msgPayload}} have been
+                processed.
+        input:
+          - variable: Trigger
+            $ref: '#/trigger/payload'
+          - variable: SalesforceRetrieveproducts
+            $ref: '#/node-output/Salesforce Retrieve products/response/payload'
+          - variable: SalesforceRetrieveproductsMetadata
+            $ref: '#/node-output/Salesforce Retrieve products/response'
+          - variable: SalesforceRetrieveorderproduct
+            $ref: '#/node-output/Salesforce Retrieve order product/response/payload'
+          - variable: SalesforceRetrieveorderproductMetadata
+            $ref: '#/node-output/Salesforce Retrieve order product/response'
+          - variable: Foreach
+            $ref: '#/node-output/For each/response/payload'
+    action-interface-3:
+      type: api-action
+      business-object: worksheetRow
+      connector-type: googlesheet
+      account-name: Account 1
+      actions:
+        CREATE: {}
+    action-interface-4:
+      type: api-action
+      business-object: mail
+      connector-type: gmail
+      account-name: Account 1
+      actions:
+        CREATE: {}
+    action-interface-6:
+      type: api-action
+      business-object: message
+      connector-type: slack
+      actions:
+        CREATE: {}
+      account-name: Account 2
+    action-interface-7:
+      type: api-action
+      business-object: OrderItem
+      connector-type: salesforce
+      account-name: Account 1
+      actions:
+        RETRIEVEALL: {}
+    action-interface-1:
+      type: api-action
+      business-object: Order
+      connector-type: salesforce
+      account-name: Account 1
+      actions:
+        RETRIEVEALL: {}
+    action-interface-9:
+      type: api-action
+      business-object: Product2
+      connector-type: salesforce
+      account-name: Account 1
+      actions:
+        RETRIEVEALL: {}
+    action-interface-10:
+      type: api-action
+      business-object: User
+      connector-type: salesforce
+      account-name: Account 1
+      actions:
+        RETRIEVEALL: {}
+  assemblies:
+    assembly-1:
+      assembly:
+        execute:
+          - retrieve-action:
+              name: Salesforce Retrieve products
+              target:
+                $ref: '#/integration/action-interfaces/action-interface-9'
+              filter:
+                where:
+                  ProductCode: '{{$Trigger.msgPayload}}'
+                input:
+                  - variable: Trigger
+                    $ref: '#/trigger/payload'
+                limit: 10
+              allow-truncation: true
+              pagination-type: TOKEN
+              allow-empty-output: true
+          - retrieve-action:
+              name: Salesforce Retrieve order product
+              target:
+                $ref: '#/integration/action-interfaces/action-interface-7'
+              filter:
+                where:
+                  Product2Id: '{{$SalesforceRetrieveproducts.Id}}'
+                input:
+                  - variable: Trigger
+                    $ref: '#/trigger/payload'
+                  - variable: SalesforceRetrieveproducts
+                    $ref: >-
+                      #/node-output/Salesforce Retrieve
+                      products/response/payload
+                  - variable: SalesforceRetrieveproductsMetadata
+                    $ref: '#/node-output/Salesforce Retrieve products/response'
+                limit: 10
+              allow-truncation: true
+              pagination-type: TOKEN
+              allow-empty-output: true
+          - for-each:
+              name: For each
+              assembly:
+                $ref: '#/integration/assemblies/assembly-2'
+              source:
+                expression: '$SalesforceRetrieveorderproduct '
+                input:
+                  - variable: Trigger
+                    $ref: '#/trigger/payload'
+                  - variable: SalesforceRetrieveproducts
+                    $ref: >-
+                      #/node-output/Salesforce Retrieve
+                      products/response/payload
+                  - variable: SalesforceRetrieveproductsMetadata
+                    $ref: '#/node-output/Salesforce Retrieve products/response'
+                  - variable: SalesforceRetrieveorderproduct
+                    $ref: >-
+                      #/node-output/Salesforce Retrieve order
+                      product/response/payload
+                  - variable: SalesforceRetrieveorderproductMetadata
+                    $ref: '#/node-output/Salesforce Retrieve order product/response'
+              mode: sequential
+              continue-on-error: true
+              map:
+                $map: 'http://ibm.com/appconnect/map/v1'
+                input:
+                  - variable: Foreachitem
+                    $ref: '#/block/For each/current-item'
+                  - variable: Trigger
+                    $ref: '#/trigger/payload'
+                  - variable: SalesforceRetrieveorders
+                    $ref: >-
+                      #/block/For each/node-output/Salesforce Retrieve
+                      orders/response/payload
+                  - variable: SalesforceRetrieveordersMetadata
+                    $ref: >-
+                      #/block/For each/node-output/Salesforce Retrieve
+                      orders/response
+                  - variable: SalesforceRetrieveuser
+                    $ref: >-
+                      #/block/For each/node-output/Salesforce Retrieve
+                      user/response/payload
+                  - variable: SalesforceRetrieveuserMetadata
+                    $ref: >-
+                      #/block/For each/node-output/Salesforce Retrieve
+                      user/response
+                  - variable: If
+                    $ref: '#/block/For each/node-output/If/response/payload'
+                  - variable: SalesforceRetrieveproducts
+                    $ref: >-
+                      #/node-output/Salesforce Retrieve
+                      products/response/payload
+                  - variable: SalesforceRetrieveproductsMetadata
+                    $ref: '#/node-output/Salesforce Retrieve products/response'
+                  - variable: SalesforceRetrieveorderproduct
+                    $ref: >-
+                      #/node-output/Salesforce Retrieve order
+                      product/response/payload
+                  - variable: SalesforceRetrieveorderproductMetadata
+                    $ref: '#/node-output/Salesforce Retrieve order product/response'
+                customSchemas:
+                  properties.`output`:
+                    type: object
+                    properties:
+                      orderName:
+                        type: string
+                mappings:
+                  - output:
+                      mappings:
+                        - orderName:
+                            template: '{{$If.orderName}}'
+              display-name: Retrieved Order
+          - notification:
+              name: Notification
+              map:
+                $map: 'http://ibm.com/appconnect/map/v1'
+                mappings: []
+                input:
+                  - variable: Trigger
+                    $ref: '#/trigger/payload'
+                  - variable: SalesforceRetrieveproducts
+                    $ref: >-
+                      #/node-output/Salesforce Retrieve
+                      products/response/payload
+                  - variable: SalesforceRetrieveproductsMetadata
+                    $ref: '#/node-output/Salesforce Retrieve products/response'
+                  - variable: SalesforceRetrieveorderproduct
+                    $ref: >-
+                      #/node-output/Salesforce Retrieve order
+                      product/response/payload
+                  - variable: SalesforceRetrieveorderproductMetadata
+                    $ref: '#/node-output/Salesforce Retrieve order product/response'
+                  - variable: Foreach
+                    $ref: '#/node-output/For each/response/payload'
+              target:
+                $ref: '#/integration/action-interfaces/action-interface-2'
+    assembly-2:
+      assembly:
+        execute:
+          - retrieve-action:
+              name: Salesforce Retrieve orders
+              target:
+                $ref: '#/integration/action-interfaces/action-interface-1'
+              filter:
+                where:
+                  Id: '{{$Foreachitem.OrderId}}'
+                input:
+                  - variable: Foreachitem
+                    $ref: '#/block/For each/current-item'
+                  - variable: Trigger
+                    $ref: '#/trigger/payload'
+                  - variable: SalesforceRetrieveproducts
+                    $ref: >-
+                      #/node-output/Salesforce Retrieve
+                      products/response/payload
+                  - variable: SalesforceRetrieveproductsMetadata
+                    $ref: '#/node-output/Salesforce Retrieve products/response'
+                  - variable: SalesforceRetrieveorderproduct
+                    $ref: >-
+                      #/node-output/Salesforce Retrieve order
+                      product/response/payload
+                  - variable: SalesforceRetrieveorderproductMetadata
+                    $ref: '#/node-output/Salesforce Retrieve order product/response'
+                limit: 10
+              allow-truncation: true
+              pagination-type: TOKEN
+              allow-empty-output: true
+          - retrieve-action:
+              name: Salesforce Retrieve user
+              target:
+                $ref: '#/integration/action-interfaces/action-interface-10'
+              filter:
+                where:
+                  Id: '{{$SalesforceRetrieveorders.OwnerId}}'
+                input:
+                  - variable: Foreachitem
+                    $ref: '#/block/For each/current-item'
+                  - variable: Trigger
+                    $ref: '#/trigger/payload'
+                  - variable: SalesforceRetrieveorders
+                    $ref: >-
+                      #/block/For each/node-output/Salesforce Retrieve
+                      orders/response/payload
+                  - variable: SalesforceRetrieveordersMetadata
+                    $ref: >-
+                      #/block/For each/node-output/Salesforce Retrieve
+                      orders/response
+                  - variable: SalesforceRetrieveproducts
+                    $ref: >-
+                      #/node-output/Salesforce Retrieve
+                      products/response/payload
+                  - variable: SalesforceRetrieveproductsMetadata
+                    $ref: '#/node-output/Salesforce Retrieve products/response'
+                  - variable: SalesforceRetrieveorderproduct
+                    $ref: >-
+                      #/node-output/Salesforce Retrieve order
+                      product/response/payload
+                  - variable: SalesforceRetrieveorderproductMetadata
+                    $ref: '#/node-output/Salesforce Retrieve order product/response'
+                limit: 10
+              allow-truncation: true
+              pagination-type: TOKEN
+              allow-empty-output: true
+          - if:
+              name: If
+              input:
+                - variable: Foreachitem
+                  $ref: '#/block/For each/current-item'
+                - variable: Trigger
+                  $ref: '#/trigger/payload'
+                - variable: SalesforceRetrieveorders
+                  $ref: >-
+                    #/block/For each/node-output/Salesforce Retrieve
+                    orders/response/payload
+                - variable: SalesforceRetrieveordersMetadata
+                  $ref: >-
+                    #/block/For each/node-output/Salesforce Retrieve
+                    orders/response
+                - variable: SalesforceRetrieveuser
+                  $ref: >-
+                    #/block/For each/node-output/Salesforce Retrieve
+                    user/response/payload
+                - variable: SalesforceRetrieveuserMetadata
+                  $ref: >-
+                    #/block/For each/node-output/Salesforce Retrieve
+                    user/response
+                - variable: SalesforceRetrieveproducts
+                  $ref: '#/node-output/Salesforce Retrieve products/response/payload'
+                - variable: SalesforceRetrieveproductsMetadata
+                  $ref: '#/node-output/Salesforce Retrieve products/response'
+                - variable: SalesforceRetrieveorderproduct
+                  $ref: >-
+                    #/node-output/Salesforce Retrieve order
+                    product/response/payload
+                - variable: SalesforceRetrieveorderproductMetadata
+                  $ref: '#/node-output/Salesforce Retrieve order product/response'
+              branch:
+                - condition:
+                    '{{$SalesforceRetrieveorders.Status}}': Activated
+                  execute:
+                    - create-action:
+                        name: Google Sheets Create row
+                        target:
+                          $ref: '#/integration/action-interfaces/action-interface-3'
+                        map:
+                          mappings:
+                            - fields:
+                                mappings:
+                                  - '1':
+                                      template: '{{$SalesforceRetrieveuser.FirstName}}'
+                                  - '2':
+                                      template: '{{$Foreachitem.Id}}'
+                                  - '3':
+                                      template: '{{$Foreachitem.Quantity}}'
+                                  - '4':
+                                      template: '{{$Foreachitem.CreatedDate}}'
+                            - spreadsheetID:
+                                template: 1N26_AojYPmRLOVKQM6SGZtfiy7H6r2FjCrUiu64whGc
+                            - worksheetID:
+                                template: Sheet1
+                          $map: 'http://ibm.com/appconnect/map/v1'
+                          input:
+                            - variable: Foreachitem
+                              $ref: '#/block/For each/current-item'
+                            - variable: Trigger
+                              $ref: '#/trigger/payload'
+                            - variable: SalesforceRetrieveorders
+                              $ref: >-
+                                #/block/For each/node-output/Salesforce Retrieve
+                                orders/response/payload
+                            - variable: SalesforceRetrieveordersMetadata
+                              $ref: >-
+                                #/block/For each/node-output/Salesforce Retrieve
+                                orders/response
+                            - variable: SalesforceRetrieveuser
+                              $ref: >-
+                                #/block/For each/node-output/Salesforce Retrieve
+                                user/response/payload
+                            - variable: SalesforceRetrieveuserMetadata
+                              $ref: >-
+                                #/block/For each/node-output/Salesforce Retrieve
+                                user/response
+                            - variable: SalesforceRetrieveproducts
+                              $ref: >-
+                                #/node-output/Salesforce Retrieve
+                                products/response/payload
+                            - variable: SalesforceRetrieveproductsMetadata
+                              $ref: >-
+                                #/node-output/Salesforce Retrieve
+                                products/response
+                            - variable: SalesforceRetrieveorderproduct
+                              $ref: >-
+                                #/node-output/Salesforce Retrieve order
+                                product/response/payload
+                            - variable: SalesforceRetrieveorderproductMetadata
+                              $ref: >-
+                                #/node-output/Salesforce Retrieve order
+                                product/response
+                  map:
+                    $map: 'http://ibm.com/appconnect/map/v1'
+                    input:
+                      - variable: Foreachitem
+                        $ref: '#/block/For each/current-item'
+                      - variable: Trigger
+                        $ref: '#/trigger/payload'
+                      - variable: SalesforceRetrieveorders
+                        $ref: >-
+                          #/node-output/Salesforce Retrieve
+                          orders/response/payload
+                      - variable: SalesforceRetrieveordersMetadata
+                        $ref: '#/node-output/Salesforce Retrieve orders/response'
+                    mappings: []
+              else:
+                execute:
+                  - if:
+                      name: If 2
+                      input:
+                        - variable: Foreachitem
+                          $ref: '#/block/For each/current-item'
+                        - variable: Trigger
+                          $ref: '#/trigger/payload'
+                        - variable: SalesforceRetrieveorders
+                          $ref: >-
+                            #/block/For each/node-output/Salesforce Retrieve
+                            orders/response/payload
+                        - variable: SalesforceRetrieveordersMetadata
+                          $ref: >-
+                            #/block/For each/node-output/Salesforce Retrieve
+                            orders/response
+                        - variable: SalesforceRetrieveuser
+                          $ref: >-
+                            #/block/For each/node-output/Salesforce Retrieve
+                            user/response/payload
+                        - variable: SalesforceRetrieveuserMetadata
+                          $ref: >-
+                            #/block/For each/node-output/Salesforce Retrieve
+                            user/response
+                        - variable: SalesforceRetrieveproducts
+                          $ref: >-
+                            #/node-output/Salesforce Retrieve
+                            products/response/payload
+                        - variable: SalesforceRetrieveproductsMetadata
+                          $ref: '#/node-output/Salesforce Retrieve products/response'
+                        - variable: SalesforceRetrieveorderproduct
+                          $ref: >-
+                            #/node-output/Salesforce Retrieve order
+                            product/response/payload
+                        - variable: SalesforceRetrieveorderproductMetadata
+                          $ref: >-
+                            #/node-output/Salesforce Retrieve order
+                            product/response
+                      branch:
+                        - condition:
+                            '{{$SalesforceRetrieveuser.Email}}':
+                              =: ''
+                          execute:
+                            - create-action:
+                                name: Slack Create message
+                                target:
+                                  $ref: >-
+                                    #/integration/action-interfaces/action-interface-6
+                                map:
+                                  mappings:
+                                    - channel:
+                                        template: CLN0D0B5L
+                                    - text:
+                                        template: >-
+                                          This order
+                                          {{$SalesforceRetrieveorders.Id}} with
+                                          contact ID:
+                                          {{$SalesforceRetrieveorders.Name}} has
+                                          no email specified.
+                                  $map: 'http://ibm.com/appconnect/map/v1'
+                                  input:
+                                    - variable: Foreachitem
+                                      $ref: '#/block/For each/current-item'
+                                    - variable: Trigger
+                                      $ref: '#/trigger/payload'
+                                    - variable: SalesforceRetrieveorders
+                                      $ref: >-
+                                        #/block/For each/node-output/Salesforce
+                                        Retrieve orders/response/payload
+                                    - variable: SalesforceRetrieveordersMetadata
+                                      $ref: >-
+                                        #/block/For each/node-output/Salesforce
+                                        Retrieve orders/response
+                                    - variable: SalesforceRetrieveuser
+                                      $ref: >-
+                                        #/block/For each/node-output/Salesforce
+                                        Retrieve user/response/payload
+                                    - variable: SalesforceRetrieveuserMetadata
+                                      $ref: >-
+                                        #/block/For each/node-output/Salesforce
+                                        Retrieve user/response
+                                    - variable: SalesforceRetrieveproducts
+                                      $ref: >-
+                                        #/node-output/Salesforce Retrieve
+                                        products/response/payload
+                                    - variable: SalesforceRetrieveproductsMetadata
+                                      $ref: >-
+                                        #/node-output/Salesforce Retrieve
+                                        products/response
+                                    - variable: SalesforceRetrieveorderproduct
+                                      $ref: >-
+                                        #/node-output/Salesforce Retrieve order
+                                        product/response/payload
+                                    - variable: SalesforceRetrieveorderproductMetadata
+                                      $ref: >-
+                                        #/node-output/Salesforce Retrieve order
+                                        product/response
+                      else:
+                        execute:
+                          - create-action:
+                              name: Gmail Create email
+                              target:
+                                $ref: >-
+                                  #/integration/action-interfaces/action-interface-4
+                              map:
+                                mappings:
+                                  - Body:
+                                      template: >-
+                                        Dear
+                                        {{$SalesforceRetrieveuser.FirstName}},
+
+                                        Your ordered item
+                                        {{$Trigger.msgPayload}} has arrived.
+                                        Please let us know if you would like to
+                                        confirm the order .
+
+                                        Thanks.
+                                  - Subject:
+                                      template: 'Your order item has arrived '
+                                  - To:
+                                      template: '{{$SalesforceRetrieveuser.Email}}'
+                                $map: 'http://ibm.com/appconnect/map/v1'
+                                input:
+                                  - variable: Foreachitem
+                                    $ref: '#/block/For each/current-item'
+                                  - variable: Trigger
+                                    $ref: '#/trigger/payload'
+                                  - variable: SalesforceRetrieveorders
+                                    $ref: >-
+                                      #/block/For each/node-output/Salesforce
+                                      Retrieve orders/response/payload
+                                  - variable: SalesforceRetrieveordersMetadata
+                                    $ref: >-
+                                      #/block/For each/node-output/Salesforce
+                                      Retrieve orders/response
+                                  - variable: SalesforceRetrieveuser
+                                    $ref: >-
+                                      #/block/For each/node-output/Salesforce
+                                      Retrieve user/response/payload
+                                  - variable: SalesforceRetrieveuserMetadata
+                                    $ref: >-
+                                      #/block/For each/node-output/Salesforce
+                                      Retrieve user/response
+                                  - variable: SalesforceRetrieveproducts
+                                    $ref: >-
+                                      #/node-output/Salesforce Retrieve
+                                      products/response/payload
+                                  - variable: SalesforceRetrieveproductsMetadata
+                                    $ref: >-
+                                      #/node-output/Salesforce Retrieve
+                                      products/response
+                                  - variable: SalesforceRetrieveorderproduct
+                                    $ref: >-
+                                      #/node-output/Salesforce Retrieve order
+                                      product/response/payload
+                                  - variable: SalesforceRetrieveorderproductMetadata
+                                    $ref: >-
+                                      #/node-output/Salesforce Retrieve order
+                                      product/response
+                      output-schema: {}
+                map:
+                  $map: 'http://ibm.com/appconnect/map/v1'
+                  input:
+                    - variable: Foreachitem
+                      $ref: '#/block/For each/current-item'
+                    - variable: Trigger
+                      $ref: '#/trigger/payload'
+                    - variable: SalesforceRetrieveorders
+                      $ref: >-
+                        #/block/For each/node-output/Salesforce Retrieve
+                        orders/response/payload
+                    - variable: SalesforceRetrieveordersMetadata
+                      $ref: >-
+                        #/block/For each/node-output/Salesforce Retrieve
+                        orders/response
+                    - variable: SalesforceRetrieveuser
+                      $ref: >-
+                        #/block/For each/node-output/Salesforce Retrieve
+                        user/response/payload
+                    - variable: SalesforceRetrieveuserMetadata
+                      $ref: >-
+                        #/block/For each/node-output/Salesforce Retrieve
+                        user/response
+                    - variable: SalesforceRetrieveproducts
+                      $ref: >-
+                        #/node-output/Salesforce Retrieve
+                        products/response/payload
+                    - variable: SalesforceRetrieveproductsMetadata
+                      $ref: '#/node-output/Salesforce Retrieve products/response'
+                    - variable: SalesforceRetrieveorderproduct
+                      $ref: >-
+                        #/node-output/Salesforce Retrieve order
+                        product/response/payload
+                    - variable: SalesforceRetrieveorderproductMetadata
+                      $ref: '#/node-output/Salesforce Retrieve order product/response'
+                  mappings:
+                    - orderName:
+                        template: '{{$Foreachitem.Name}}'
+              output-schema:
+                required: []
+                properties:
+                  orderName:
+                    type: string
+                    title: orderName
+                title: Output Schema
+                type: object
+  name: ProcessSalesForce Orders
+models: {}
